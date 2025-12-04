@@ -55,18 +55,32 @@ escapement.replay("tr_abc123def456")
 - **Zero-cost replay**: Cached responses mean free regression testing
 - **Loop detection**: Automatically kills runaway agents before they burn your budget
 - **Time-travel debugging**: Fork from any point and go live
-- **Framework agnostic**: Works with OpenAI, LangChain, or raw HTTP calls
+- **Multi-provider**: Works with OpenAI, Anthropic, OpenRouter, and any OpenAI-compatible API
+
+## Supported Providers
+
+| Provider | Status | Notes |
+|----------|--------|-------|
+| OpenAI | Supported | Full support including tool calls |
+| Anthropic | Supported | Claude models, tool use |
+| OpenRouter | Supported | Uses OpenAI SDK, works automatically |
+| Azure OpenAI | Supported | Uses OpenAI SDK, works automatically |
+| LangChain | Supported | Via callback handler |
 
 ## Installation
 
 ```bash
+# Core (no provider SDKs)
 pip install escapement
-```
 
-With LangChain support:
+# With OpenAI
+pip install escapement[openai]
 
-```bash
-pip install escapement[langchain]
+# With Anthropic
+pip install escapement[anthropic]
+
+# With everything
+pip install escapement[all]
 ```
 
 ## Quick Start
@@ -127,6 +141,49 @@ escapement.fork()
 
 # Now LLM calls go to the real API
 # Test your fix without re-running setup steps
+```
+
+## Provider Examples
+
+### Anthropic
+
+```python
+import escapement
+from anthropic import Anthropic
+
+escapement.init(name="claude-agent")
+
+client = Anthropic()
+response = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello, Claude!"}]
+)
+
+escapement.stop()
+```
+
+### OpenRouter
+
+```python
+import escapement
+from openai import OpenAI
+
+escapement.init(name="openrouter-agent")
+
+# OpenRouter uses OpenAI SDK with different base_url
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key="your-openrouter-key",
+)
+
+response = client.chat.completions.create(
+    model="anthropic/claude-sonnet-4-20250514",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+
+escapement.stop()
+# Works automatically - no extra configuration needed
 ```
 
 ## CLI Commands
@@ -244,7 +301,8 @@ This prevents runaway agents from burning through your API budget.
 
 ## Roadmap
 
-- [ ] Anthropic Claude support
+- [x] Anthropic Claude support
+- [x] OpenRouter support (via OpenAI SDK)
 - [ ] Tool/function call mocking
 - [ ] Streaming replay with timing simulation
 - [ ] VS Code extension for visual debugging
